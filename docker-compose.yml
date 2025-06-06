@@ -1,0 +1,25 @@
+version: "3.9"
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  ingestor:
+    build:
+      context: ./go.ingestor
+      dockerfile: Dockerfile
+    container_name: go-ingestor
+    environment:
+      - REDIS_URL=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
