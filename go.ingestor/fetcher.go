@@ -9,6 +9,7 @@ import (
 
 	polygon "github.com/polygon-io/client-go/rest"
 	"github.com/polygon-io/client-go/rest/models"
+	"github.com/tmaldrsn/tradebot/go.ingestor/utils"
 )
 
 func FetchCandles(ticker string, interval string) ([]Candle, error) {
@@ -24,10 +25,15 @@ func FetchCandles(ticker string, interval string) ([]Candle, error) {
 		log.Fatalf("Error parsing 'to' date: %v", err)
 	}
 
+	ivl, err := utils.ParseInterval(interval)
+	if err != nil {
+		log.Fatalf("Failed to parse interval: %v", err)
+	}
+
 	params := models.ListAggsParams{
 		Ticker:     "X:BTCUSD",
-		Multiplier: 5,
-		Timespan:   "minute",
+		Multiplier: ivl.Multiplier,
+		Timespan:   ivl.Timespan,
 		From:       models.Millis(from),
 		To:         models.Millis(to),
 	}.
