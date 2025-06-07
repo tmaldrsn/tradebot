@@ -15,6 +15,7 @@ services:
     container_name: go-ingestor
     environment:
       - REDIS_URL=redis:6379
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
     depends_on:
       - redis
     networks:
