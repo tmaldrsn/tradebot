@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"os"
 	"time"
@@ -9,39 +8,36 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
-
 func main() {
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis:6379"
 	}
 
-	opts := &redis.Options{
+	rdb := redis.NewClient(&redis.Options{
 		Addr: redisURL,
 		DB:   0,
+	})
+
+	tickerSymbol := "AAPL"
+	interval := "1m"
+
+	// Loop to fetch and store candles every minute
+	for {
+		candles, err := FetchCandles(tickerSymbol, interval)
+		if err != nil {
+			fmt.Println("❌ Fetch error:", err)
+			continue
+		}
+
+		for _, c := range candles {
+			if err := StoreCandle(rdb, c); err != nil {
+				fmt.Println("❌ Store error:", err)
+			} else {
+				fmt.Printf("✅ Stored candle for %s at %d\n", c.Ticker, c.Timestamp)
+			}
+		}
+
+		time.Sleep(60 * time.Second)
 	}
-
-	client := redis.NewClient(opts)
-
-	// ping test
-	err := client.Ping(ctx).Err()
-	if err != nil {
-		panic(fmt.Sprintf("Failed to connect to Redis: %v", err))
-	}
-
-	fmt.Println("✅ Connected to Redis")
-
-	// Example usage
-	err = client.Set(ctx, "foo", "bar", time.Minute).Err()
-	if err != nil {
-		panic(err)
-	}
-
-	val, err := client.Get(ctx, "foo").Result()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("Value for 'foo': %s\r", val)
 }
