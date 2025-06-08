@@ -1,0 +1,10 @@
+sources:
+  - name: polygon
+    type: rest
+    tickers:
+      - ticker: X:BTCUSD
+        timeframe: 5m
+        polling_interval: 1m
+      - ticker: X:ETHUSD
+        timeframe: 1m
+        polling_interval: 1m

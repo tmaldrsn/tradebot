@@ -16,10 +16,13 @@ services:
     environment:
       - REDIS_URL=redis:6379
       - POLYGON_API_KEY=${POLYGON_API_KEY}
+      - CONFIG_PATH=/app/config.yaml
     depends_on:
       - redis
     networks:
       - backend
+    volumes:
+      - ./config/dev.yaml:/app/config.yaml:ro
 
 networks:
   backend:
