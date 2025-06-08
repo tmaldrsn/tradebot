@@ -29,7 +29,11 @@ func NewIngestor() *PolygonRestIngestor {
 }
 
 func (p *PolygonRestIngestor) SourceName() string {
-	return "polygon:rest"
+	return "polygon"
+}
+
+func (p *PolygonRestIngestor) SourceType() string {
+	return "rest"
 }
 
 func (p *PolygonRestIngestor) FetchCandles(ticker, timeframe string, from, to time.Time) ([]core.Candle, error) {
