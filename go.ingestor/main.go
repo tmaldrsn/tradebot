@@ -3,52 +3,13 @@ package main
 import (
 	"log"
 	"os"
-	"sync"
-	"time"
+	"os/signal"
+	"syscall"
 
-	"github.com/redis/go-redis/v9"
+	"github.com/tmaldrsn/tradebot/go.ingestor/config"
+	"github.com/tmaldrsn/tradebot/go.ingestor/scheduler"
+	polygonrest "github.com/tmaldrsn/tradebot/go.ingestor/sources/polygon/rest"
 )
-
-type Job struct {
-	Ticker    string
-	Timeframe string
-}
-
-type TickerConfig struct {
-	Ticker       string
-	Timeframe    string
-	PollInterval time.Duration // how often to poll
-}
-
-func worker(id int, jobs <-chan Job, wg *sync.WaitGroup, rdb *redis.Client) {
-	defer wg.Done()
-
-	for job := range jobs {
-		log.Printf("[Worker %d] Processing %s", id, job.Ticker)
-
-		candles, err := FetchCandles(job.Ticker, job.Timeframe)
-		if err != nil {
-			log.Printf("[Worker %d] Error fetching for %s: %v", id, job.Ticker, err)
-			continue
-		}
-
-		StoreCandles(rdb, candles)
-	}
-}
-
-func startScheduler(configs []TickerConfig, jobQueue chan<- Job) {
-	for _, cfg := range configs {
-		go func(c TickerConfig) {
-			ticker := time.NewTicker(c.PollInterval)
-			defer ticker.Stop()
-
-			for {
-				jobQueue <- Job{Ticker: c.Ticker, Timeframe: c.Timeframe}
-				<-ticker.C
-			}
-		}(cfg)
-	}
-}
 
 func main() {
 	redisURL := os.Getenv("REDIS_URL")
@@ -56,26 +17,39 @@ func main() {
 		redisURL = "redis:6379"
 	}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: redisURL,
-		DB:   0,
-	})
+	// rdb := redis.NewClient(&redis.Options{
+	// 	Addr: redisURL,
+	// 	DB:   0,
+	// })
 
-	configs := []TickerConfig{
-		{"X:BTCUSD", "1h", 1 * time.Minute},
-		{"X:ETHUSD", "30m", 2 * time.Minute},
-		{"AAPL", "10m", 5 * time.Minute},
+	configPath := os.Getenv("CONFIG_PATH")
+	if configPath == "" {
+		log.Fatal("CONFIG_PATH env var not set")
 	}
 
-	jobQueue := make(chan Job, 100)
-	startScheduler(configs, jobQueue)
-
-	var wg sync.WaitGroup
-	numWorkers := 4
-	for i := 0; i < numWorkers; i++ {
-		wg.Add(1)
-		go worker(i, jobQueue, &wg, rdb)
+	cfg, err := config.LoadConfig(configPath)
+	if err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	select {} // Block forever or implement graceful shutdown
+	// cfg, err := cfg.GetSource("polygon", "rest")
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	ingestor := polygonrest.NewIngestor()
+	jobs := scheduler.BuildScheduledJobs(cfg, ingestor)
+
+	pool := scheduler.NewWorkerPool(100, 4)
+	sched := scheduler.NewScheduler(pool, jobs)
+	sched.Start()
+
+	// Wait for interrupt signal
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	<-sigs
+	log.Println("Shutdown signal received.")
+	pool.Stop()
+	sched.Stop()
 }
