@@ -1,4 +1,4 @@
-package main
+package core
 
 type Candle struct {
 	Ticker    string  `json:"ticker"`
@@ -8,6 +8,6 @@ type Candle struct {
 	Low       float64 `json:"low"`
 	Close     float64 `json:"close"`
 	Volume    float64 `json:"volume"`
-	Interval  string  `json:"interval"` // e.g., "1m", "5m"
+	Timeframe string  `json:"interval"` // e.g., "1m", "5m"
 	Source    string  `json:"source"`
 }
