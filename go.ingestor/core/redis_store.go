@@ -1,4 +1,4 @@
-package main
+package core
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 var ctx = context.Background()
 
 func StoreCandle(rdb *redis.Client, candle Candle) error {
-	key := fmt.Sprintf("candle:%s:%s:%d", candle.Ticker, candle.Interval, candle.Timestamp)
+	key := fmt.Sprintf("candle:%s:%s:%d", candle.Ticker, candle.Timeframe, candle.Timestamp)
 
 	data, err := json.Marshal(candle)
 	if err != nil {
@@ -26,7 +26,7 @@ func StoreCandles(rdb *redis.Client, candles []Candle) {
 		if err := StoreCandle(rdb, c); err != nil {
 			fmt.Println("❌ Store error:", err)
 		} else {
-			// fmt.Printf("✅ Stored %s candle for %s at %d\n", c.Interval, c.Ticker, c.Timestamp)
+			// fmt.Printf("✅ Stored %s candle for %s at %d\n", c.Timeframe, c.Ticker, c.Timestamp)
 		}
 	}
 }
