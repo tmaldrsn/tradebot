@@ -8,22 +8,22 @@ import (
 	"github.com/polygon-io/client-go/rest/models"
 )
 
-type PolygonInterval struct {
+type PolygonTimeframe struct {
 	Multiplier int
 	Timespan   models.Timespan
 }
 
-func ParseInterval(intervalStr string) (PolygonInterval, error) {
+func ParseTimeframe(intervalStr string) (PolygonTimeframe, error) {
 	// Match intervals like "1m", "5h", "2d", etc.
 	re := regexp.MustCompile(`^(\d+)([mhdwMy])$`)
 	matches := re.FindStringSubmatch(intervalStr)
 	if len(matches) != 3 {
-		return PolygonInterval{}, fmt.Errorf("invalid interval format: %s", intervalStr)
+		return PolygonTimeframe{}, fmt.Errorf("invalid timeframe format: %s", intervalStr)
 	}
 
 	multiplier, err := strconv.Atoi(matches[1])
 	if err != nil {
-		return PolygonInterval{}, fmt.Errorf("invalid number in interval: %w", err)
+		return PolygonTimeframe{}, fmt.Errorf("invalid number in timeframe: %w", err)
 	}
 
 	var timespan models.Timespan
@@ -41,10 +41,10 @@ func ParseInterval(intervalStr string) (PolygonInterval, error) {
 	case "y", "Y":
 		timespan = models.Year
 	default:
-		return PolygonInterval{}, fmt.Errorf("unknown timespan suffix: %s", matches[2])
+		return PolygonTimeframe{}, fmt.Errorf("unknown timespan suffix: %s", matches[2])
 	}
 
-	return PolygonInterval{
+	return PolygonTimeframe{
 		Multiplier: multiplier,
 		Timespan:   timespan,
 	}, nil
