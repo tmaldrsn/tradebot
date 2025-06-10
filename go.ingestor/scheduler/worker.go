@@ -33,7 +33,7 @@ func (p *WorkerPool) worker(id int) {
 	for {
 		select {
 		case job := <-p.JobQueue:
-			log.Printf("[Worker %d] Fetching %s candles for %s from %s\n", id, job.Timeframe, job.Ticker, job.Ingestor.SourceName())
+			// log.Printf("[Worker %d] Fetching %s candles for %s from %s\n", id, job.Timeframe, job.Ticker, job.Ingestor.SourceName())
 
 			// `from` and `to` cannot be real time until I update the subscription
 			// we can only get end-of-day data currently
@@ -47,11 +47,9 @@ func (p *WorkerPool) worker(id int) {
 				log.Printf("[Worker %d] Error fetching candles: %v", id, err)
 				continue
 			}
-			// for _, c := range candles {
-			// 	log.Printf("[Worker %d] Candle: %+v", id, c)
-			// }
-			job.MarkRun()
+
 			core.StoreCandles(p.Redis, candles)
+			job.MarkRun(id)
 		case <-p.Quit:
 			log.Printf("[Worker %d] Shutting down", id)
 			return
