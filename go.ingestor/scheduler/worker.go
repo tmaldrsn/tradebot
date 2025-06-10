@@ -3,17 +3,22 @@ package scheduler
 import (
 	"log"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/tmaldrsn/tradebot/go.ingestor/core"
 )
 
 type WorkerPool struct {
 	JobQueue chan Job
 	Quit     chan struct{}
+	Redis    *redis.Client
 }
 
-func NewWorkerPool(queueSize, numWorkers int) *WorkerPool {
+func NewWorkerPool(queueSize, numWorkers int, redisClient *redis.Client) *WorkerPool {
 	pool := &WorkerPool{
 		JobQueue: make(chan Job, queueSize),
 		Quit:     make(chan struct{}),
+		Redis:    redisClient,
 	}
 
 	for i := 0; i < numWorkers; i++ {
@@ -36,7 +41,8 @@ func (p *WorkerPool) worker(id int) {
 			// to := time.Now()
 			from, _ := time.Parse("2006-01-02", "2025-06-01")
 			to, _ := time.Parse("2006-01-02", "2025-06-02")
-			_, err := job.Ingestor.FetchCandles(job.Ticker, job.Timeframe, from, to)
+
+			candles, err := job.Ingestor.FetchCandles(job.Ticker, job.Timeframe, from, to)
 			if err != nil {
 				log.Printf("[Worker %d] Error fetching candles: %v", id, err)
 				continue
@@ -45,6 +51,7 @@ func (p *WorkerPool) worker(id int) {
 			// 	log.Printf("[Worker %d] Candle: %+v", id, c)
 			// }
 			job.MarkRun()
+			core.StoreCandles(p.Redis, candles)
 		case <-p.Quit:
 			log.Printf("[Worker %d] Shutting down", id)
 			return

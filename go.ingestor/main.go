@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/tmaldrsn/tradebot/go.ingestor/config"
 	"github.com/tmaldrsn/tradebot/go.ingestor/scheduler"
 	polygonrest "github.com/tmaldrsn/tradebot/go.ingestor/sources/polygon/rest"
@@ -17,10 +18,10 @@ func main() {
 		redisURL = "redis:6379"
 	}
 
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr: redisURL,
-	// 	DB:   0,
-	// })
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisURL,
+		DB:   0,
+	})
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
@@ -40,7 +41,7 @@ func main() {
 	ingestor := polygonrest.NewIngestor()
 	jobs := scheduler.BuildScheduledJobs(cfg, ingestor)
 
-	pool := scheduler.NewWorkerPool(100, 4)
+	pool := scheduler.NewWorkerPool(100, 4, rdb)
 	sched := scheduler.NewScheduler(pool, jobs)
 	sched.Start()
 
