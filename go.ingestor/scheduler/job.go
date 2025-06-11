@@ -20,7 +20,7 @@ func (j *Job) ShouldRun(now time.Time) bool {
 	return !now.Before(j.NextRun)
 }
 
-func (j *Job) MarkRun(worker_id int) {
+func (j *Job) MarkRun(workerId int) {
 	j.NextRun = time.Now().Add(j.Interval)
-	log.Printf("[Worker %d] Successfully fetched %s candles for %s from %s\n", worker_id, j.Timeframe, j.Ticker, j.Ingestor.SourceName())
+	log.Printf("[Worker %d] Successfully fetched %s candles for %s from %s\n", workerId, j.Timeframe, j.Ticker, j.Ingestor.SourceName())
 }

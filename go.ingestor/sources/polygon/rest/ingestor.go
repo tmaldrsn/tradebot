@@ -17,12 +17,12 @@ type PolygonRestIngestor struct {
 }
 
 func NewIngestor() *PolygonRestIngestor {
-	api_key := os.Getenv("POLYGON_API_KEY")
-	if api_key == "" {
+	apiKey := os.Getenv("POLYGON_API_KEY")
+	if apiKey == "" {
 		panic("No Polygon API key found!!")
 	}
 
-	client := polygon.New(api_key)
+	client := polygon.New(apiKey)
 	return &PolygonRestIngestor{
 		client: client,
 	}
