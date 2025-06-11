@@ -14,6 +14,7 @@ type WorkerPool struct {
 	Redis    *redis.Client
 }
 
+// NewWorkerPool creates and starts a WorkerPool with the specified job queue size, number of worker goroutines, and a Redis client.
 func NewWorkerPool(queueSize, numWorkers int, redisClient *redis.Client) *WorkerPool {
 	pool := &WorkerPool{
 		JobQueue: make(chan Job, queueSize),

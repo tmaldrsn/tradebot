@@ -13,6 +13,7 @@ import (
 	polygonrest "github.com/tmaldrsn/tradebot/go.ingestor/sources/polygon/rest"
 )
 
+// main initializes the job processing system, loads configuration, sets up Redis, starts scheduled jobs, and handles graceful shutdown on interrupt signals.
 func main() {
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
