@@ -17,7 +17,7 @@ type Job struct {
 }
 
 func (j *Job) ShouldRun(now time.Time) bool {
-	return j.NextRun.Sub(now) >= j.Interval
+	return !now.Before(j.NextRun)
 }
 
 func (j *Job) MarkRun(worker_id int) {
