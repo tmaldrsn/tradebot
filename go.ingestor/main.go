@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
@@ -22,6 +23,9 @@ func main() {
 		Addr: redisURL,
 		DB:   0,
 	})
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("cannot connect to redis at %s: %v", redisURL, err)
+	}
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
