@@ -53,4 +53,8 @@ func main() {
 	log.Println("Shutdown signal received.")
 	pool.Stop()
 	sched.Stop()
+
+	if err := rdb.Close(); err != nil {
+		log.Printf("error closing redis client: %v", err)
+	}
 }
