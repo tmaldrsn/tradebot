@@ -3,17 +3,23 @@ package scheduler
 import (
 	"log"
 	"time"
+
+	"github.com/redis/go-redis/v9"
+	"github.com/tmaldrsn/tradebot/go.ingestor/core"
 )
 
 type WorkerPool struct {
 	JobQueue chan Job
 	Quit     chan struct{}
+	Redis    *redis.Client
 }
 
-func NewWorkerPool(queueSize, numWorkers int) *WorkerPool {
+// NewWorkerPool creates and starts a WorkerPool with the specified job queue size, number of worker goroutines, and a Redis client.
+func NewWorkerPool(queueSize, numWorkers int, redisClient *redis.Client) *WorkerPool {
 	pool := &WorkerPool{
 		JobQueue: make(chan Job, queueSize),
 		Quit:     make(chan struct{}),
+		Redis:    redisClient,
 	}
 
 	for i := 0; i < numWorkers; i++ {
@@ -28,7 +34,7 @@ func (p *WorkerPool) worker(id int) {
 	for {
 		select {
 		case job := <-p.JobQueue:
-			log.Printf("[Worker %d] Fetching %s candles for %s from %s\n", id, job.Timeframe, job.Ticker, job.Ingestor.SourceName())
+			// log.Printf("[Worker %d] Fetching %s candles for %s from %s\n", id, job.Timeframe, job.Ticker, job.Ingestor.SourceName())
 
 			// `from` and `to` cannot be real time until I update the subscription
 			// we can only get end-of-day data currently
@@ -36,15 +42,15 @@ func (p *WorkerPool) worker(id int) {
 			// to := time.Now()
 			from, _ := time.Parse("2006-01-02", "2025-06-01")
 			to, _ := time.Parse("2006-01-02", "2025-06-02")
-			_, err := job.Ingestor.FetchCandles(job.Ticker, job.Timeframe, from, to)
+
+			candles, err := job.Ingestor.FetchCandles(job.Ticker, job.Timeframe, from, to)
 			if err != nil {
 				log.Printf("[Worker %d] Error fetching candles: %v", id, err)
 				continue
 			}
-			// for _, c := range candles {
-			// 	log.Printf("[Worker %d] Candle: %+v", id, c)
-			// }
-			job.MarkRun()
+
+			core.StoreCandles(p.Redis, candles)
+			job.MarkRun(id)
 		case <-p.Quit:
 			log.Printf("[Worker %d] Shutting down", id)
 			return

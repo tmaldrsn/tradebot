@@ -1,26 +1,32 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/tmaldrsn/tradebot/go.ingestor/config"
 	"github.com/tmaldrsn/tradebot/go.ingestor/scheduler"
 	polygonrest "github.com/tmaldrsn/tradebot/go.ingestor/sources/polygon/rest"
 )
 
+// main initializes the job processing system, loads configuration, sets up Redis, starts scheduled jobs, and handles graceful shutdown on interrupt signals.
 func main() {
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis:6379"
 	}
 
-	// rdb := redis.NewClient(&redis.Options{
-	// 	Addr: redisURL,
-	// 	DB:   0,
-	// })
+	rdb := redis.NewClient(&redis.Options{
+		Addr: redisURL,
+		DB:   0,
+	})
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		log.Fatalf("cannot connect to redis at %s: %v", redisURL, err)
+	}
 
 	configPath := os.Getenv("CONFIG_PATH")
 	if configPath == "" {
@@ -40,7 +46,7 @@ func main() {
 	ingestor := polygonrest.NewIngestor()
 	jobs := scheduler.BuildScheduledJobs(cfg, ingestor)
 
-	pool := scheduler.NewWorkerPool(100, 4)
+	pool := scheduler.NewWorkerPool(100, 4, rdb)
 	sched := scheduler.NewScheduler(pool, jobs)
 	sched.Start()
 
@@ -52,4 +58,8 @@ func main() {
 	log.Println("Shutdown signal received.")
 	pool.Stop()
 	sched.Stop()
+
+	if err := rdb.Close(); err != nil {
+		log.Printf("error closing redis client: %v", err)
+	}
 }
