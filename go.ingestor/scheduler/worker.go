@@ -50,6 +50,17 @@ func (p *WorkerPool) worker(id int) {
 			}
 
 			core.StoreCandles(p.Redis, candles)
+
+			event := core.MarketDataFetchedEvent{
+				Ticker:    job.Ticker,
+				Timeframe: job.Timeframe,
+				Candles:   candles,
+			}
+
+			if err := core.PublishMarketData(p.Redis, event); err != nil {
+				log.Printf("[Worker %d] ⚠️  Failed to publish market data: %v", id, err)
+			}
+
 			job.MarkRun(id)
 		case <-p.Quit:
 			log.Printf("[Worker %d] Shutting down", id)
