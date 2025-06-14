@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"context"
 	"log"
 	"time"
 
@@ -15,7 +16,7 @@ type WorkerPool struct {
 }
 
 // NewWorkerPool creates and starts a WorkerPool with the specified job queue size, number of worker goroutines, and a Redis client.
-func NewWorkerPool(queueSize, numWorkers int, redisClient *redis.Client) *WorkerPool {
+func NewWorkerPool(ctx context.Context, queueSize, numWorkers int, redisClient *redis.Client) *WorkerPool {
 	pool := &WorkerPool{
 		JobQueue: make(chan Job, queueSize),
 		Quit:     make(chan struct{}),
@@ -23,14 +24,14 @@ func NewWorkerPool(queueSize, numWorkers int, redisClient *redis.Client) *Worker
 	}
 
 	for i := 0; i < numWorkers; i++ {
-		go pool.worker(i)
+		go pool.worker(ctx, i)
 	}
 
 	log.Print("New worker pool has been created")
 	return pool
 }
 
-func (p *WorkerPool) worker(id int) {
+func (p *WorkerPool) worker(ctx context.Context, id int) {
 	for {
 		select {
 		case job := <-p.JobQueue:
@@ -57,7 +58,7 @@ func (p *WorkerPool) worker(id int) {
 				Candles:   candles,
 			}
 
-			if err := core.PublishMarketData(p.Redis, event); err != nil {
+			if err := core.PublishMarketData(ctx, p.Redis, event); err != nil {
 				log.Printf("[Worker %d] ⚠️  Failed to publish market data: %v", id, err)
 			}
 

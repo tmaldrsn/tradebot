@@ -7,17 +7,15 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var pubsubCtx = context.Background()
-
 const MarketDataFetchedTopic = "marketdata:fetched"
 
-func PublishMarketData(rdb *redis.Client, event MarketDataFetchedEvent) error {
+func PublishMarketData(ctx context.Context, rdb *redis.Client, event MarketDataFetchedEvent) error {
 	data, err := json.Marshal(event)
 	if err != nil {
 		return err
 	}
 
-	err = rdb.Publish(pubsubCtx, MarketDataFetchedTopic, data).Err()
+	err = rdb.Publish(ctx, MarketDataFetchedTopic, data).Err()
 	if err != nil {
 		return err
 	}

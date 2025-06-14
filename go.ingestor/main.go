@@ -15,6 +15,8 @@ import (
 
 // main initializes the job processing system, loads configuration, sets up Redis, starts scheduled jobs, and handles graceful shutdown on interrupt signals.
 func main() {
+	ctx := context.Background()
+
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis:6379"
@@ -46,7 +48,7 @@ func main() {
 	ingestor := polygonrest.NewIngestor()
 	jobs := scheduler.BuildScheduledJobs(cfg, ingestor)
 
-	pool := scheduler.NewWorkerPool(100, 4, rdb)
+	pool := scheduler.NewWorkerPool(ctx, 100, 4, rdb)
 	sched := scheduler.NewScheduler(pool, jobs)
 	sched.Start()
 
