@@ -21,12 +21,12 @@ func StoreCandle(rdb *redis.Client, candle Candle) error {
 	return rdb.Set(ctx, key, data, 0).Err()
 }
 
-func StoreCandles(rdb *redis.Client, candles []Candle) {
+func StoreCandles(rdb *redis.Client, candles []Candle) error {
 	for _, c := range candles {
 		if err := StoreCandle(rdb, c); err != nil {
 			fmt.Println("❌ Store error:", err)
-		} else {
-			// fmt.Printf("✅ Stored %s candle for %s at %d\n", c.Timeframe, c.Ticker, c.Timestamp)
+			return err
 		}
 	}
+	return nil
 }

@@ -50,7 +50,10 @@ func (p *WorkerPool) worker(ctx context.Context, id int) {
 				continue
 			}
 
-			core.StoreCandles(p.Redis, candles)
+			if err := core.StoreCandles(p.Redis, candles); err != nil {
+				log.Printf("[Worker %d] ❌ Failed to store candles: %v", id, err)
+				continue
+			}
 
 			event := core.MarketDataFetchedEvent{
 				Ticker:    job.Ticker,
