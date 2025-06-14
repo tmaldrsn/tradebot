@@ -22,11 +22,16 @@ func StoreCandle(rdb *redis.Client, candle Candle) error {
 }
 
 func StoreCandles(rdb *redis.Client, candles []Candle) error {
-	for _, c := range candles {
-		if err := StoreCandle(rdb, c); err != nil {
-			fmt.Println("❌ Store error:", err)
-			return err
+	_, err := rdb.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, c := range candles {
+			key := fmt.Sprintf("candle:%s:%s:%d", c.Ticker, c.Timeframe, c.Timestamp)
+			data, err := json.Marshal(c)
+			if err != nil {
+				return err
+			}
+			pipe.Set(ctx, key, data, 0)
 		}
-	}
-	return nil
+		return nil
+	})
+	return err
 }
