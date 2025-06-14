@@ -27,7 +27,7 @@ func main() {
 		Addr: redisURL,
 		DB:   0,
 	})
-	if err := rdb.Ping(ctx).Err(); err != nil {
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
 		log.Fatalf("cannot connect to redis at %s: %v", redisURL, err)
 	}
 
