@@ -8,9 +8,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
-
-func StoreCandle(rdb *redis.Client, candle Candle) error {
+func StoreCandle(ctx context.Context, rdb *redis.Client, candle Candle) error {
 	key := fmt.Sprintf("candle:%s:%s:%d", candle.Ticker, candle.Timeframe, candle.Timestamp)
 
 	data, err := json.Marshal(candle)
@@ -21,12 +19,17 @@ func StoreCandle(rdb *redis.Client, candle Candle) error {
 	return rdb.Set(ctx, key, data, 0).Err()
 }
 
-func StoreCandles(rdb *redis.Client, candles []Candle) {
-	for _, c := range candles {
-		if err := StoreCandle(rdb, c); err != nil {
-			fmt.Println("❌ Store error:", err)
-		} else {
-			// fmt.Printf("✅ Stored %s candle for %s at %d\n", c.Timeframe, c.Ticker, c.Timestamp)
+func StoreCandles(ctx context.Context, rdb *redis.Client, candles []Candle) error {
+	_, err := rdb.Pipelined(ctx, func(pipe redis.Pipeliner) error {
+		for _, c := range candles {
+			key := fmt.Sprintf("candle:%s:%s:%d", c.Ticker, c.Timeframe, c.Timestamp)
+			data, err := json.Marshal(c)
+			if err != nil {
+				return err
+			}
+			pipe.Set(ctx, key, data, 0)
 		}
-	}
+		return nil
+	})
+	return err
 }
