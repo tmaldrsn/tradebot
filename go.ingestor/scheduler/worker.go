@@ -50,7 +50,7 @@ func (p *WorkerPool) worker(ctx context.Context, id int) {
 				continue
 			}
 
-			if err := core.StoreCandles(p.Redis, candles); err != nil {
+			if err := core.StoreCandles(ctx, p.Redis, candles); err != nil {
 				log.Printf("[Worker %d] ❌ Failed to store candles: %v", id, err)
 				continue
 			}
