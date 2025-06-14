@@ -24,6 +24,18 @@ services:
     volumes:
       - ./config/dev.yaml:/app/config.yaml:ro
 
+  detector:
+    build:
+      context: ./go.detector
+      dockerfile: Dockerfile
+    container_name: go-detector
+    environment:
+      - REDIS_URL=redis:6379
+    depends_on:
+      - redis
+    networks:
+      - backend
+
 networks:
   backend:
     driver: bridge
