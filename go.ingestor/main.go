@@ -15,7 +15,8 @@ import (
 
 // main initializes the job processing system, loads configuration, sets up Redis, starts scheduled jobs, and handles graceful shutdown on interrupt signals.
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
@@ -58,6 +59,7 @@ func main() {
 
 	<-sigs
 	log.Println("Shutdown signal received.")
+	cancel()
 	pool.Stop()
 	sched.Stop()
 
