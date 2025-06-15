@@ -61,7 +61,7 @@ func GetCandlesByTickerAndTimeframe(rdb *redis.Client, ticker string, timeframe 
 	}
 
 	if err := iter.Err(); err != nil {
-		log.Fatalf("iteration error: %w", err)
+		log.Fatalf("iteration error: %v", err)
 	}
 
 	return candles, nil
