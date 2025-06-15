@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sort"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tmaldrsn/tradebot/go.detector/core"
@@ -15,7 +16,7 @@ type MarketDataFetchedEvent struct {
 	Timeframe string `json:"timeframe"`
 }
 
-func HandleMarketDataMessage(payload string) {
+func HandleMarketDataMessage(payload string, rdb *redis.Client) {
 	var event MarketDataFetchedEvent
 	if err := json.Unmarshal([]byte(payload), &event); err != nil {
 		log.Printf("❌ Failed to parse candle message: %v", err)
@@ -25,6 +26,14 @@ func HandleMarketDataMessage(payload string) {
 	log.Printf("🕯️ Detected event: %+v", event)
 
 	// TODO: Run pattern detection here (swing point, etc.)
+	candles, err := GetCandlesByTickerAndTimeframe(rdb, event.Ticker, event.Timeframe)
+	if err != nil {
+		log.Printf("❌ Failed to read candles from redis: %v", err)
+	}
+
+	sort.Slice(candles, func(i, j int) bool {
+		return candles[i].Timestamp < candles[j].Timestamp
+	})
 }
 
 func GetCandlesByTickerAndTimeframe(rdb *redis.Client, ticker string, timeframe string) ([]core.Candle, error) {
