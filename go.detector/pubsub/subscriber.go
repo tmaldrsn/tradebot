@@ -7,7 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func Subscribe(ctx context.Context, rdb *redis.Client, channel string, handler func(string)) {
+func Subscribe(ctx context.Context, rdb *redis.Client, channel string, handler func(payload string, rdb *redis.Client)) {
 	sub := rdb.Subscribe(ctx, channel)
 	ch := sub.Channel()
 
@@ -16,7 +16,7 @@ func Subscribe(ctx context.Context, rdb *redis.Client, channel string, handler f
 	go func() {
 		for msg := range ch {
 			log.Printf("📨 Received message on %s", channel)
-			handler(msg.Payload)
+			handler(msg.Payload, rdb)
 		}
 	}()
 }
