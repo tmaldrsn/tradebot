@@ -14,9 +14,18 @@ func Subscribe(ctx context.Context, rdb *redis.Client, channel string, handler f
 	log.Printf("Subscribed to Redis channel: %s", channel)
 
 	go func() {
-		for msg := range ch {
-			log.Printf("📨 Received message on %s", channel)
-			handler(msg.Payload, rdb)
+		defer sub.Close() // ensure cleanup
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case msg, ok := <-ch:
+				if !ok {
+					return // channel closed
+				}
+				log.Printf("📨 Received message on %s", channel)
+				handler(msg.Payload, rdb)
+			}
 		}
 	}()
 }
