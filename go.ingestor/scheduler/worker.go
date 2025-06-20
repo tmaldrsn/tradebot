@@ -39,10 +39,10 @@ func (p *WorkerPool) worker(ctx context.Context, id int) {
 
 			// `from` and `to` cannot be real time until I update the subscription
 			// we can only get end-of-day data currently
-			// from := time.Now().Add(-1 * job.Interval)
-			// to := time.Now()
-			from, _ := time.Parse("2006-01-02", "2025-06-01")
-			to, _ := time.Parse("2006-01-02", "2025-06-02")
+			from := time.Now().AddDate(0, 0, -3)
+			to := time.Now().AddDate(0, 0, -3)
+			// from, _ := time.Parse("2006-01-02", "2025-06-01")
+			// to, _ := time.Parse("2006-01-02", "2025-06-02")
 
 			candles, err := job.Ingestor.FetchCandles(job.Ticker, job.Timeframe, from, to)
 			if err != nil {
