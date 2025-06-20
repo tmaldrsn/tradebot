@@ -36,7 +36,7 @@ func (s *Scheduler) Start() {
 		case now := <-ticker.C:
 			for i := range s.jobs {
 				job := &s.jobs[i]
-				if now.After(job.Job.NextRun) {
+				if now == job.Job.NextRun || now.After(job.Job.NextRun) {
 					s.pool.JobQueue <- job.Job
 					job.Job.NextRun = now.Add(job.Interval)
 				}
