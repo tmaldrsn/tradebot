@@ -17,7 +17,8 @@ func BuildScheduledJobs(cfg *config.Config, ingestor core.Ingestor) []ScheduledJ
 			continue // skip if not matching the ingestor we’re wiring
 		}
 		for _, ticker := range source.Tickers {
-			interval, err := time.ParseDuration(ticker.PollingInterval)
+			// interval, err := time.ParseDuration(ticker.PollingInterval)
+			interval, err := time.ParseDuration(ticker.Timeframe)
 			if err != nil {
 				panic(err)
 			}
