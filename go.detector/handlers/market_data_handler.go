@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"sort"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/tmaldrsn/tradebot/go.detector/core"
+	"github.com/tmaldrsn/tradebot/go.detector/patterns"
 )
 
 type MarketDataFetchedEvent struct {
@@ -31,9 +31,8 @@ func HandleMarketDataMessage(payload string, rdb *redis.Client) {
 		log.Printf("❌ Failed to read candles from redis: %v", err)
 	}
 
-	sort.Slice(candles, func(i, j int) bool {
-		return candles[i].Timestamp < candles[j].Timestamp
-	})
+	swingPoints := patterns.DetectSwingPoints(candles)
+	log.Print(swingPoints)
 }
 
 func GetCandlesByTickerAndTimeframe(rdb *redis.Client, ticker string, timeframe string) ([]core.Candle, error) {
