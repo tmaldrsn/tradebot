@@ -6,9 +6,14 @@ import (
 	"github.com/tmaldrsn/tradebot/go.detector/core"
 )
 
+const (
+	SwingHigh = "swing_high"
+	SwingLow  = "swing_low"
+)
+
 type SwingPoint struct {
 	Candle core.Candle
-	Type   string // "swing_high" or "swing_low"
+	Type   string // "SwingHigh" or "SwingLow"
 }
 
 func DetectSwingPoints(candles []core.Candle) []SwingPoint {
@@ -23,10 +28,10 @@ func DetectSwingPoints(candles []core.Candle) []SwingPoint {
 		next := candles[i+1]
 
 		if curr.Low < prev.Low && curr.Low < next.Low {
-			swings = append(swings, SwingPoint{Candle: curr, Type: "swing_low"})
+			swings = append(swings, SwingPoint{Candle: curr, Type: SwingLow})
 		}
 		if curr.High > prev.High && curr.High > next.High {
-			swings = append(swings, SwingPoint{Candle: curr, Type: "swing_high"})
+			swings = append(swings, SwingPoint{Candle: curr, Type: SwingHigh})
 		}
 	}
 	return swings

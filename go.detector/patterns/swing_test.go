@@ -20,11 +20,11 @@ func TestDetectSwingPoints(t *testing.T) {
 
 	// Verify the swing points are correct
 	for _, swing := range swings {
-		if !(swing.Type == "swing_low" && swing.Candle.Low == 4) {
 			t.Error("Expected swing low with Low=4 not found")
+		if swing.Type == SwingLow && swing.Candle.Low == 4 {
 		}
-		if !(swing.Type == "swing_high" && swing.Candle.High == 12) {
 			t.Error("Expected swing high with High=12 not found")
+		if swing.Type == SwingHigh && swing.Candle.High == 12 {
 		}
 	}
 }
