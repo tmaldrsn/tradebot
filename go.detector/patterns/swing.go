@@ -17,15 +17,23 @@ type SwingPoint struct {
 }
 
 func DetectSwingPoints(candles []core.Candle) []SwingPoint {
-	sort.Slice(candles, func(i, j int) bool {
+	if len(candles) < 3 {
+		return []SwingPoint{}
+	}
+
+	// Create a copy to avoid modifying the input slice
+	sortedCandles := make([]core.Candle, len(candles))
+	copy(sortedCandles, candles)
+
+	sort.Slice(sortedCandles, func(i, j int) bool {
 		return candles[i].Timestamp < candles[j].Timestamp
 	})
 
 	var swings []SwingPoint
-	for i := 1; i < len(candles)-1; i++ {
-		prev := candles[i-1]
-		curr := candles[i]
-		next := candles[i+1]
+	for i := 1; i < len(sortedCandles)-1; i++ {
+		prev := sortedCandles[i-1]
+		curr := sortedCandles[i]
+		next := sortedCandles[i+1]
 
 		if curr.Low < prev.Low && curr.Low < next.Low {
 			swings = append(swings, SwingPoint{Candle: curr, Type: SwingLow})
