@@ -1,6 +1,7 @@
-import aiohttp
 import os
-import time
+
+import aiohttp
+
 
 async def fetch_candles(ticker, timeframe):
     api_key = os.getenv("POLYGON_API_KEY")

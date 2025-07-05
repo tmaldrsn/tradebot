@@ -1,5 +1,6 @@
 import json
 
+
 async def get_recent_candles(rdb, ticker, timeframe, limit=100):
     # Use scan or sorted keys (your data model may vary)
     pattern = f"candle:{ticker}:{timeframe}:*"

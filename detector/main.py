@@ -1,8 +1,9 @@
 import asyncio
 import json
-from redis.asyncio import Redis
-from core.redis_store import get_recent_candles
+
 from core.patterns import detect_swing_points
+from core.redis_store import get_recent_candles
+from redis.asyncio import Redis
 
 CHANNEL = "marketdata:fetched"
 

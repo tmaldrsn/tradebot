@@ -1,5 +1,6 @@
 import json
 
+
 async def store_candles(rdb, candles):
     pipe = rdb.pipeline()
     for c in candles:
