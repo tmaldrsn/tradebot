@@ -1,3 +1,4 @@
+import datetime
 import asyncio
 import signal
 import sys
@@ -5,7 +6,8 @@ import sys
 from core.config import load_config
 from core.pubsub import publish_event
 from core.redis_store import store_candles
-from polygon_api import fetch_candles
+from core.api.polygon import fetch_candles
+from core.timeframe import Timeframe
 from redis.asyncio import Redis
 
 # Graceful shutdown event
@@ -15,11 +17,18 @@ async def poll_ticker(source_name, rdb, ticker_cfg):
     while not shutdown.is_set():
         print(f"🔄 [async] Polling {ticker_cfg['ticker']} [{ticker_cfg['timeframe']}] from {source_name}")
         
+        tf = Timeframe(ticker_cfg["timeframe"])
+
+        from_ = datetime.datetime.now() - datetime.timedelta(days=2)
+        to = from_ + tf.to_timedelta()
+
         try:
             # Fetch candles
             candles = await fetch_candles(
                 ticker=ticker_cfg["ticker"],
-                timeframe=ticker_cfg["timeframe"]
+                timeframe=ticker_cfg["timeframe"],
+                from_=from_,
+                to=to
             )
 
             # Store candles
@@ -35,7 +44,7 @@ async def poll_ticker(source_name, rdb, ticker_cfg):
         except Exception as e:
             print(f"❌ Error in poller for {ticker_cfg['ticker']}: {e}", file=sys.stderr)
 
-        await asyncio.sleep(ticker_cfg["polling_interval"])
+        await asyncio.sleep(tf.to_seconds())
 
 async def main():
     print("🚀 Starting Async Ingestor")
