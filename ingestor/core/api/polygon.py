@@ -32,19 +32,29 @@ class PolygonTimeframe(Timeframe):
         }[self.timespan]
 
 
-async def fetch_candles(ticker, timeframe, from_, to):
+def get_polygon_client():
     api_key = os.getenv("POLYGON_API_KEY")
-    client = RESTClient(api_key=api_key)
+    if not api_key:
+        raise ValueError("POLYGON_API_KEY environment variable is required")
+
+    return RESTClient(api_key=api_key)
+
+
+async def fetch_candles(ticker, timeframe, from_, to):
+    client = get_polygon_client()
     tf = PolygonTimeframe(timeframe)
 
-    aggs = client.list_aggs(
-        ticker=ticker,
-        multiplier=tf.multiplier,
-        timespan=tf.get_timespan_string(),
-        from_=from_,
-        to=to,
-        limit=10000
-    )
+    try:
+        aggs = client.list_aggs(
+            ticker=ticker,
+            multiplier=tf.multiplier,
+            timespan=tf.get_timespan_string(),
+            from_=from_,
+            to=to,
+            limit=10000
+        )
+    except Exception as e:
+        raise RuntimeError(f"Failed to fetch candles from Polygon API: {e}") from e
 
     candles = []
     for agg in aggs:
