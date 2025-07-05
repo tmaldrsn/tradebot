@@ -1,9 +1,3 @@
-def main():
-    print("Hello from detector!")
-
-
-if __name__ == "__main__":
-    main()
 import asyncio
 import json
 from redis.asyncio import Redis
