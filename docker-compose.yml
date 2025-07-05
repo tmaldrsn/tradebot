@@ -10,27 +10,41 @@ services:
 
   ingestor:
     build:
-      context: ./go.ingestor
+      context: ./ingestor
       dockerfile: Dockerfile
-    container_name: go-ingestor
+    develop:
+      watch:
+        - action: sync
+          path: ./ingestor
+          target: /app
+          ignore:
+            - .venv/
+        - action: rebuild
+          path: ./pyproject.toml
     environment:
       - REDIS_URL=redis:6379
       - POLYGON_API_KEY=${POLYGON_API_KEY}
-      - CONFIG_PATH=/app/config.yaml
     depends_on:
       - redis
     networks:
       - backend
-    volumes:
-      - ./config/dev.yaml:/app/config.yaml:ro
-
+ 
   detector:
     build:
-      context: ./go.detector
+      context: ./detector
       dockerfile: Dockerfile
-    container_name: go-detector
+    develop:
+      watch:
+        - action: sync
+          path: ./detector
+          target: /app
+          ignore:
+            - .venv/
+        - action: rebuild
+          path: ./pyproject.toml
     environment:
       - REDIS_URL=redis:6379
+      - POLYGON_API_KEY=${POLYGON_API_KEY}
     depends_on:
       - redis
     networks:
@@ -39,3 +53,5 @@ services:
 networks:
   backend:
     driver: bridge
+
+
