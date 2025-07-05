@@ -1,1 +1,8 @@
+# Local environment variables
 .env
+
+# UV virtual environments
+.venv
+
+# Pycache
+__pycache__
