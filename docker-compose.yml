@@ -12,15 +12,6 @@ services:
     build:
       context: ./ingestor
       dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./ingestor
-          target: /app
-          ignore:
-            - .venv/
-        - action: rebuild
-          path: ./pyproject.toml
     environment:
       - REDIS_URL=redis:6379
       - POLYGON_API_KEY=${POLYGON_API_KEY}
@@ -33,15 +24,6 @@ services:
     build:
       context: ./detector
       dockerfile: Dockerfile
-    develop:
-      watch:
-        - action: sync
-          path: ./detector
-          target: /app
-          ignore:
-            - .venv/
-        - action: rebuild
-          path: ./pyproject.toml
     environment:
       - REDIS_URL=redis:6379
       - POLYGON_API_KEY=${POLYGON_API_KEY}
