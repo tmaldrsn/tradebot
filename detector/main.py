@@ -23,6 +23,8 @@ async def handle_message(message):
         if not redis_host:
             raise Exception("Environment variable `REDIS_HOST` is not set.")
         rdb = Redis(host=redis_host, port=6379, decode_responses=True)
+        
+        candles = get_recent_candles(rdb, ticker, timeframe, limit=3)
 
         # Detect patterns
         matches = detect_swing_points(candles)
