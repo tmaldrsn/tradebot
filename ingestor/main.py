@@ -1,6 +1,7 @@
 import datetime
 import asyncio
 import signal
+import os
 import sys
 
 from core.config import load_config
@@ -8,7 +9,10 @@ from core.pubsub import publish_event
 from core.redis_store import store_candles
 from core.api.polygon import fetch_candles
 from core.timeframe import Timeframe
+from dotenv import load_dotenv
 from redis.asyncio import Redis
+
+load_dotenv('../.env')
 
 # Graceful shutdown event
 shutdown = asyncio.Event()
@@ -53,8 +57,10 @@ async def main():
     config = load_config("config.yaml")
 
     # Initialize async Redis client
-    rdb = Redis(host="redis", port=6379, decode_responses=True)
-    await rdb.ping()
+    redis_host = os.getenv("REDIS_HOST")
+    if not redis_host:
+        raise Exception("Environment variable `REDIS_HOST` is not set.")
+    rdb = Redis(host=redis_host, port=6379, decode_responses=True)
 
     # Create async polling tasks
     tasks = []
