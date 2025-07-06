@@ -1,6 +1,5 @@
-import datetime
 import asyncio
-import signal
+import datetime
 import os
 import sys
 
@@ -69,19 +68,16 @@ async def main():
             task = asyncio.create_task(poll_ticker(source["name"], rdb, ticker_cfg))
             tasks.append(task)
 
-    # Shutdown handler
-    def handle_shutdown():
-        print("\n🛑 Received shutdown signal")
-        shutdown.set()
-
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, handle_shutdown)
-
-    await shutdown.wait()
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
+    try:
+        print("🔁 Ingestor running. Press Ctrl+C to exit.")
+        await asyncio.gather(*tasks)
+    except asyncio.CancelledError:
+        print("🛑 Cancelling tasks...")
+    except KeyboardInterrupt:
+        print("\n🛑 KeyboardInterrupt received. Cancelling tasks...")
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     print("✅ Async Ingestor exited cleanly.")
 
