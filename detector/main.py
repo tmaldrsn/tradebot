@@ -2,9 +2,9 @@ import asyncio
 import json
 import os
 
-from core.patterns import detect_swing_points
-from core.redis_store import get_recent_candles
 from dotenv import load_dotenv
+from src.core.patterns import detect_swing_points
+from src.infra.redis_store import get_recent_candles
 from redis.asyncio import Redis
 
 load_dotenv('../.env')

@@ -10,6 +10,7 @@ def detect_swing_points(candles):
             results.append({
                 "timestamp": curr["timestamp"],
                 "ticker": curr["ticker"],
+                "timeframe": curr["timeframe"],
                 "type": "high" if is_swing_high else "low"
             })
 
