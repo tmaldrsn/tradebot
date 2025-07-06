@@ -3,13 +3,13 @@ import datetime
 import os
 import sys
 
-from core.config import load_config
-from core.pubsub import publish_event
-from core.redis_store import store_candles
-from core.api.polygon import fetch_candles
-from core.timeframe import Timeframe
 from dotenv import load_dotenv
 from redis.asyncio import Redis
+from src.api.polygon import fetch_candles
+from src.core.config import load_config
+from src.core.timeframe import Timeframe
+from src.infra.pubsub import publish_event
+from src.infra.redis_store import store_candles
 
 load_dotenv('../.env')
 
