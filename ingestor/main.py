@@ -13,11 +13,9 @@ from src.infra.redis_store import store_candles
 
 load_dotenv('../.env')
 
-# Graceful shutdown event
-shutdown = asyncio.Event()
 
 async def poll_ticker(source_name, rdb, ticker_cfg):
-    while not shutdown.is_set():
+    while True:
         print(f"🔄 [async] Polling {ticker_cfg['ticker']} [{ticker_cfg['timeframe']}] from {source_name}")
         
         tf = Timeframe(ticker_cfg["timeframe"])
