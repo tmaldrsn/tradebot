@@ -1,20 +1,21 @@
-import datetime
 import asyncio
-import signal
+import datetime
+import os
 import sys
 
-from core.config import load_config
-from core.pubsub import publish_event
-from core.redis_store import store_candles
-from core.api.polygon import fetch_candles
-from core.timeframe import Timeframe
+from dotenv import load_dotenv
 from redis.asyncio import Redis
+from src.api.polygon import fetch_candles
+from src.core.config import load_config
+from src.core.timeframe import Timeframe
+from src.infra.pubsub import publish_event
+from src.infra.redis_store import store_candles
 
-# Graceful shutdown event
-shutdown = asyncio.Event()
+load_dotenv('../.env')
+
 
 async def poll_ticker(source_name, rdb, ticker_cfg):
-    while not shutdown.is_set():
+    while True:
         print(f"🔄 [async] Polling {ticker_cfg['ticker']} [{ticker_cfg['timeframe']}] from {source_name}")
         
         tf = Timeframe(ticker_cfg["timeframe"])
@@ -53,8 +54,10 @@ async def main():
     config = load_config("config.yaml")
 
     # Initialize async Redis client
-    rdb = Redis(host="redis", port=6379, decode_responses=True)
-    await rdb.ping()
+    redis_host = os.getenv("REDIS_HOST")
+    if not redis_host:
+        raise Exception("Environment variable `REDIS_HOST` is not set.")
+    rdb = Redis(host=redis_host, port=6379, decode_responses=True)
 
     # Create async polling tasks
     tasks = []
@@ -63,19 +66,16 @@ async def main():
             task = asyncio.create_task(poll_ticker(source["name"], rdb, ticker_cfg))
             tasks.append(task)
 
-    # Shutdown handler
-    def handle_shutdown():
-        print("\n🛑 Received shutdown signal")
-        shutdown.set()
-
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        loop.add_signal_handler(sig, handle_shutdown)
-
-    await shutdown.wait()
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)
+    try:
+        print("🔁 Ingestor running. Press Ctrl+C to exit.")
+        await asyncio.gather(*tasks)
+    except asyncio.CancelledError:
+        print("🛑 Cancelling tasks...")
+    except KeyboardInterrupt:
+        print("\n🛑 KeyboardInterrupt received. Cancelling tasks...")
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)
 
     print("✅ Async Ingestor exited cleanly.")
 

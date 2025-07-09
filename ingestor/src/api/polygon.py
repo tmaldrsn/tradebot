@@ -70,4 +70,4 @@ async def fetch_candles(ticker, timeframe, from_, to):
             source="polygon",
         ))
 
-    return list(candles)
+    return candles
