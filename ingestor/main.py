@@ -1,15 +1,14 @@
 import asyncio
 import datetime
-import os
 import sys
 
 import yaml
 from dotenv import load_dotenv
-from redis.asyncio import Redis
 from src.api.polygon import fetch_candles
 from src.core.timeframe import Timeframe
 from src.infra.pubsub import publish_event
 from src.infra.redis_store import store_candles
+from src.infra.redis import get_redis_connection
 
 load_dotenv('../.env')
 
@@ -55,10 +54,7 @@ async def main():
         return yaml.safe_load(f)
 
     # Initialize async Redis client
-    redis_host = os.getenv("REDIS_HOST")
-    if not redis_host:
-        raise Exception("Environment variable `REDIS_HOST` is not set.")
-    rdb = Redis(host=redis_host, port=6379, decode_responses=True)
+    rdb = get_redis_connection()
 
     # Create async polling tasks
     tasks = []
