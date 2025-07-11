@@ -11,7 +11,7 @@ class Timespan(str, Enum):
     HOUR = "h"
     DAY = "d"
     WEEK = "w"
-    MONTH = "m"
+    MONTH = "M"
     QUARTER = "q"
     YEAR = "y"
 
