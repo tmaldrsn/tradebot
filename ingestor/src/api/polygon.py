@@ -5,31 +5,30 @@ from polygon import RESTClient
 
 from core.candle import Candle
 from core.timeframe import Timeframe
+TIMESPAN_ABBR_TO_POLYGON_TIMESPAN_ABBR = {
+    "m": "minute",
+    "h": "hour",
+    "d": "day",
+    "w": "week",
+    "M": "month",
+    "q": "quarter",
+    "y": "year",
+}
 
-class PolygonTimespan(StrEnum):
-    MINUTE = "minute"
-    HOUR = "hour"
-    DAY = "day"
-    WEEK = "week"
-    MONTH = "month"
-    QUARTER = "quarter"
-    YEAR = "year"
+class PolygonTimeframeDTO(TimeframeDTO):
+    def get_timespan_string(self) -> str:
+        return TIMESPAN_ABBR_TO_POLYGON_TIMESPAN_ABBR[self.timespan.value]
 
+    @classmethod
+    def from_generic_timeframe_dto(cls, dto: TimeframeDTO):
+        if dto.timespan.value == "s": 
+            raise NotImplementedError("Polygon does not support `second` timeframes.")
 
-class PolygonTimeframe(Timeframe):
-    def __init__(self, timeframe):
-        super().__init__(timeframe)
+        return cls(
+            multiplier=dto.multiplier,
+            timespan=dto.timespan
+        )
 
-    def get_timespan_string(self):
-        return {
-            "m": PolygonTimespan.MINUTE,
-            "h": PolygonTimespan.HOUR,
-            "d": PolygonTimespan.DAY,
-            "w": PolygonTimespan.WEEK,
-            "M": PolygonTimespan.MONTH,
-            "q": PolygonTimespan.QUARTER,
-            "y": PolygonTimespan.YEAR,
-        }[self.timespan]
 
 
 def get_polygon_client():
