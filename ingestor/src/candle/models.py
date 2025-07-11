@@ -35,7 +35,7 @@ class TimeframeDTO(BaseModel):
 
 
     def to_seconds(self) -> int:
-        if self.timespan in 'Mqy':
+        if self.timespan.value in 'Mqy':
             raise NotImplementedError("The number of seconds for months, quarters, or years cannot be calculated.")
 
         mapping = {
