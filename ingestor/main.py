@@ -3,10 +3,10 @@ import datetime
 import os
 import sys
 
+import yaml
 from dotenv import load_dotenv
 from redis.asyncio import Redis
 from src.api.polygon import fetch_candles
-from src.core.config import load_config
 from src.core.timeframe import Timeframe
 from src.infra.pubsub import publish_event
 from src.infra.redis_store import store_candles
@@ -51,7 +51,8 @@ async def main():
     print("🚀 Starting Async Ingestor")
 
     # Load config
-    config = load_config("config.yaml")
+    with open("config.yaml") as f:
+        return yaml.safe_load(f)
 
     # Initialize async Redis client
     redis_host = os.getenv("REDIS_HOST")
