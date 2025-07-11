@@ -4,63 +4,72 @@ import sys
 
 import yaml
 from dotenv import load_dotenv
-from src.api.polygon import fetch_candles
-from src.core.timeframe import Timeframe
-from src.infra.pubsub import publish_event
-from src.infra.redis_store import store_candles
+from src.api.polygon import PolygonClient, PolygonTimeframeDTO
+from src.candle.repository.redis import RedisCandleRepository
+from src.candle.models import parse_timeframe_string_to_dto
 from src.infra.redis import get_redis_connection, publish_event
 
 load_dotenv('../.env')
 
+# instantiate polygon client
+polygon_client = PolygonClient()
 
-async def poll_ticker(source_name, rdb, ticker_cfg):
+# instantiate redis connection
+rdb = get_redis_connection()
+redis_candle_repository = RedisCandleRepository(rdb)
+
+
+async def poll_ticker(source_name, ticker_cfg):
     while True:
         print(f"🔄 [async] Polling {ticker_cfg['ticker']} [{ticker_cfg['timeframe']}] from {source_name}")
-        
-        tf = Timeframe(ticker_cfg["timeframe"])
+    
+        timeframe_dto = parse_timeframe_string_to_dto(ticker_cfg["timeframe"])
+        timeframe = PolygonTimeframeDTO.from_generic_timeframe_dto(timeframe_dto)
 
         from_ = datetime.datetime.now() - datetime.timedelta(days=2)
-        to = from_ + tf.to_timedelta()
+        to = from_ + timeframe.to_timedelta()
 
         try:
+            # Check ticker
+            ticker = polygon_client.get_ticker(ticker_cfg['ticker'])
+            if not ticker:
+                raise Exception(f"Ticker `{ticker_cfg['ticker']}` not found!")
+
             # Fetch candles
-            candles = await fetch_candles(
-                ticker=ticker_cfg["ticker"],
-                timeframe=ticker_cfg["timeframe"],
+            candles = polygon_client.fetch_candles(
+                ticker=ticker,
+                timeframe=timeframe,
                 from_=from_,
                 to=to
             )
 
             # Store candles
-            await store_candles(rdb, candles)
+            await redis_candle_repository.save_candles(candles)
 
             # Publish event
             event = {
-                "ticker": ticker_cfg["ticker"],
-                "timeframe": ticker_cfg["timeframe"],
+                "ticker": ticker.abbreviation,
+                "timeframe": timeframe.model_dump(),
                 "count": len(candles)
             }
             await publish_event(rdb, "marketdata:fetched", event)
         except Exception as e:
             print(f"❌ Error in poller for {ticker_cfg['ticker']}: {e}", file=sys.stderr)
 
-        await asyncio.sleep(tf.to_seconds())
+        await asyncio.sleep(timeframe.to_seconds())
+
 
 async def main():
     print("🚀 Starting Async Ingestor")
 
-    # Load config
     with open("config.yaml") as f:
-        return yaml.safe_load(f)
-
-    # Initialize async Redis client
-    rdb = get_redis_connection()
+        config = yaml.safe_load(f)
 
     # Create async polling tasks
     tasks = []
     for source in config["sources"]:
         for ticker_cfg in source["tickers"]:
-            task = asyncio.create_task(poll_ticker(source["name"], rdb, ticker_cfg))
+            task = asyncio.create_task(poll_ticker(source["name"], ticker_cfg))
             tasks.append(task)
 
     try:
@@ -75,6 +84,7 @@ async def main():
         await asyncio.gather(*tasks, return_exceptions=True)
 
     print("✅ Async Ingestor exited cleanly.")
+
 
 if __name__ == "__main__":
     asyncio.run(main())
