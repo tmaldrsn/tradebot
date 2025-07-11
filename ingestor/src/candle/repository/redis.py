@@ -41,9 +41,8 @@ class RedisCandleRepository:
     async def save_candles(self, candles: list[CandleDTO]) -> None:
         pipe = self.rdb.pipeline()
         for c in candles:
-            index_key = REDIS_CANDLE_INDEX_KEY.format(ticker=c.ticker, timeframe=c.timeframe)
-            key = REDIS_CANDLE_KEY.format(index_key=index_key, timestamp=c.timestamp)
-            pipe.set(key, json.dumps(c.model_dump_json()))
+            key = c.redis_key()
+            pipe.set(key, c.model_dump_json())
             pipe.expire(key, 60*60)
         await pipe.execute()
 
