@@ -8,7 +8,7 @@ from src.api.polygon import fetch_candles
 from src.core.timeframe import Timeframe
 from src.infra.pubsub import publish_event
 from src.infra.redis_store import store_candles
-from src.infra.redis import get_redis_connection
+from src.infra.redis import get_redis_connection, publish_event
 
 load_dotenv('../.env')
 
