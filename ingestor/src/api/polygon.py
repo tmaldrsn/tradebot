@@ -1,10 +1,10 @@
+import datetime
 import os
-from enum import StrEnum
 
 from polygon import RESTClient
+from polygon.exceptions import BadResponse
+from src.candle.models import CandleDTO, TickerDTO, TimeframeDTO
 
-from core.candle import Candle
-from core.timeframe import Timeframe
 TIMESPAN_ABBR_TO_POLYGON_TIMESPAN_ABBR = {
     "m": "minute",
     "h": "hour",
@@ -30,43 +30,48 @@ class PolygonTimeframeDTO(TimeframeDTO):
         )
 
 
+class PolygonClient:
+    def __init__(self, api_key=None):
+        self.api_key = os.getenv("POLYGON_API_KEY") if not api_key else api_key
+        assert self.api_key, "Provide `api_key` argument or set `POLYGON_API_KEY` environment variable."
 
-def get_polygon_client():
-    api_key = os.getenv("POLYGON_API_KEY")
-    if not api_key:
-        raise ValueError("POLYGON_API_KEY environment variable is required")
-
-    return RESTClient(api_key=api_key)
+        self.client = RESTClient(api_key=self.api_key)
 
 
-async def fetch_candles(ticker, timeframe, from_, to):
-    client = get_polygon_client()
-    tf = PolygonTimeframe(timeframe)
+    def get_ticker(self, ticker: str) -> TickerDTO | None:
+        try:
+            deats = self.client.get_ticker_details(ticker)
+        except BadResponse:
+            return
+        
+        return TickerDTO(abbreviation=deats.ticker)
 
-    try:
-        aggs = client.list_aggs(
-            ticker=ticker,
-            multiplier=tf.multiplier,
-            timespan=tf.get_timespan_string(),
-            from_=from_,
-            to=to,
-            limit=10000
-        )
-    except Exception as e:
-        raise RuntimeError(f"Failed to fetch candles from Polygon API: {e}") from e
 
-    candles = []
-    for agg in aggs:
-        candles.append(Candle(
-            ticker=ticker,
-            timestamp=agg.timestamp,
-            open=agg.open,
-            high=agg.high,
-            low=agg.low,
-            close=agg.close,
-            volume=agg.volume,
-            timeframe=tf.timeframe,
-            source="polygon",
-        ))
+    def fetch_candles(self, ticker: TickerDTO, timeframe: PolygonTimeframeDTO, from_: datetime.date, to: datetime.date) -> list[CandleDTO]:
+        try:
+            aggs = self.client.list_aggs(
+                ticker=ticker.abbreviation,
+                multiplier=timeframe.multiplier,
+                timespan=timeframe.get_timespan_string(),
+                from_=from_,
+                to=to,
+                limit=10000
+            )
+        except Exception as e:
+            raise RuntimeError(f"Failed to fetch candles from Polygon API: {e}") from e
 
-    return candles
+        candles = []
+        for agg in aggs:
+            candles.append(CandleDTO(
+                ticker=ticker,
+                timestamp=agg.timestamp,
+                open=agg.open,
+                high=agg.high,
+                low=agg.low,
+                close=agg.close,
+                volume=agg.volume,
+                timeframe=timeframe,
+                source="polygon",
+            ))
+
+        return candles
