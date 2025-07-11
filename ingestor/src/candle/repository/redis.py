@@ -56,6 +56,6 @@ class RedisCandleRepository:
         if not keys:
             return []
 
-        raw = self.rdb.mget(keys)
-        return [CandleDTO(c).model_validate() for c in raw if c]
+        raw = await self.rdb.mget(keys)
+        return [CandleDTO.model_validate_json(c) for c in raw if c]
     
