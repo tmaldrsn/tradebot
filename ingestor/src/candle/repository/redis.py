@@ -22,15 +22,12 @@ class RedisTickerRepository:
 
 
     def fetch_ticker(self, ticker: str) -> TickerDTO | None:
-        pattern = f"ticker:{ticker}"
-        keys = self.rdb.keys(pattern)
-        if not keys:
-            print(f"TickerDTO `{ticker}` not found...")
-            return
+        key = f"ticker:{ticker}"
+        raw_value = self.rdb.get(key)
+        if not raw_value:
+            return None
 
-        raw = self.rdb.mget(keys)
-        raw_json = json.loads(raw)
-        return TickerDTO(raw_json).model_validate()
+        return TickerDTO.model_validate_json(raw_value)
 
 
 class RedisCandleRepository:
