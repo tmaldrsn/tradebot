@@ -1,5 +1,3 @@
-import json
-
 from redis import Redis
 
 from src.candle.models import TickerDTO, CandleDTO
