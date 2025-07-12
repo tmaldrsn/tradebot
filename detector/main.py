@@ -6,8 +6,14 @@ from dotenv import load_dotenv
 from src.core.patterns import detect_swing_points
 from src.infra.redis_store import get_recent_candles
 from redis.asyncio import Redis
+from src.infra.redis import get_redis_connection
 
 load_dotenv('../.env')
+
+# instantiate redis connection
+rdb = get_redis_connection()
+redis_candle_repository = RedisCandleRepository(rdb)
+
 
 CHANNEL = "marketdata:fetched"
 
@@ -17,12 +23,6 @@ async def handle_message(message):
         ticker = data["ticker"]
         timeframe = data["timeframe"]
         print(f"📩 Event received for {ticker} @ {timeframe}")
-
-        # Get candles for analysis
-        redis_host = os.getenv('REDIS_HOST')
-        if not redis_host:
-            raise Exception("Environment variable `REDIS_HOST` is not set.")
-        rdb = Redis(host=redis_host, port=6379, decode_responses=True)
         
         candles = get_recent_candles(rdb, ticker, timeframe, limit=3)
 
@@ -35,10 +35,7 @@ async def handle_message(message):
 
 
 async def main():
-    redis_host = os.getenv('REDIS_HOST')
-    if not redis_host:
-        raise Exception("Environment variable `REDIS_HOST` is not set.")
-    rdb = Redis(host=redis_host, port=6379, decode_responses=True)
+    rdb = get_redis_connection()
 
     pubsub = rdb.pubsub()
     await pubsub.subscribe(CHANNEL)
