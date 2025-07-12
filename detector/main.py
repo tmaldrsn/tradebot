@@ -2,7 +2,7 @@ import asyncio
 import json
 
 from dotenv import load_dotenv
-from src.core.patterns import detect_swing_points
+from src.patterns.patterns import detect_swing_points
 from src.candle.repository.redis import RedisCandleRepository
 from src.infra.redis import get_redis_connection
 
