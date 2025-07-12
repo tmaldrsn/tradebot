@@ -1,11 +1,9 @@
 import asyncio
 import json
-import os
 
 from dotenv import load_dotenv
 from src.core.patterns import detect_swing_points
-from src.infra.redis_store import get_recent_candles
-from redis.asyncio import Redis
+from src.candle.repository.redis import RedisCandleRepository
 from src.infra.redis import get_redis_connection
 
 load_dotenv('../.env')
@@ -24,7 +22,7 @@ async def handle_message(message):
         timeframe = data["timeframe"]
         print(f"📩 Event received for {ticker} @ {timeframe}")
         
-        candles = get_recent_candles(rdb, ticker, timeframe, limit=3)
+        candles = await redis_candle_repository.fetch_candles(ticker, timeframe, limit=3)
 
         # Detect patterns
         matches = detect_swing_points(candles)
