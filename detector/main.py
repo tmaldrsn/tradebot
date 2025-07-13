@@ -1,30 +1,25 @@
 import asyncio
 import json
-import os
+from typing import Any
 
 from dotenv import load_dotenv
-from src.core.patterns import detect_swing_points
-from src.infra.redis_store import get_recent_candles
-from redis.asyncio import Redis
+from src.patterns.patterns import detect_swing_points
+from src.candle.repository.redis import RedisCandleRepository
+from src.infra.redis import get_redis_connection
 
 load_dotenv('../.env')
 
+
 CHANNEL = "marketdata:fetched"
 
-async def handle_message(message):
+async def handle_message(message: Any, redis_candle_repository: RedisCandleRepository):
     try:
         data = json.loads(message["data"])
         ticker = data["ticker"]
         timeframe = data["timeframe"]
         print(f"📩 Event received for {ticker} @ {timeframe}")
-
-        # Get candles for analysis
-        redis_host = os.getenv('REDIS_HOST')
-        if not redis_host:
-            raise Exception("Environment variable `REDIS_HOST` is not set.")
-        rdb = Redis(host=redis_host, port=6379, decode_responses=True)
         
-        candles = get_recent_candles(rdb, ticker, timeframe, limit=3)
+        candles = await redis_candle_repository.fetch_candles(ticker, timeframe, limit=3)
 
         # Detect patterns
         matches = detect_swing_points(candles)
@@ -35,10 +30,9 @@ async def handle_message(message):
 
 
 async def main():
-    redis_host = os.getenv('REDIS_HOST')
-    if not redis_host:
-        raise Exception("Environment variable `REDIS_HOST` is not set.")
-    rdb = Redis(host=redis_host, port=6379, decode_responses=True)
+    # instantiate redis connection
+    rdb = get_redis_connection()
+    redis_candle_repository = RedisCandleRepository(rdb)
 
     pubsub = rdb.pubsub()
     await pubsub.subscribe(CHANNEL)
@@ -46,7 +40,7 @@ async def main():
 
     async for message in pubsub.listen():
         if message["type"] == "message":
-            await handle_message(message)
+            await handle_message(message, redis_candle_repository)
 
 if __name__ == "__main__":
     asyncio.run(main())
