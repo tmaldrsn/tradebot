@@ -28,6 +28,16 @@ class RedisCandleRepository:
         if not keys:
             return []
 
-        raw = await self.rdb.mget(keys)
-        return [CandleDTO.model_validate_json(c) for c in raw if c]
-    
+        try:
+            raw = await self.rdb.mget(keys)
+            candles = []
+            for data in raw:
+                if data:  # Skip None values
+                    try:
+                        candles.append(CandleDTO.model_validate_json(data))
+                    except Exception as e:
+                        print(f"Warning: Failed to parse candle data: {e}")
+            return candles
+        except Exception as e:
+            print(f"Error fetching candles from Redis: {e}")
+            return []    
