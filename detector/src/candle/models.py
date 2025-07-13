@@ -89,3 +89,11 @@ class CandleDTO(BaseModel):
     def redis_key(self):
         return f"{self.redis_index_key()}:{self.timestamp}"
     
+    def validate_olhc_relationships(self) -> "CandleDTO":
+        if self.high < self.low:
+            raise ValueError("High price cannot be less than low price")
+        if not (self.low <= self.open <= self.high):
+            raise ValueError("Open price must be between low and high")
+        if not (self.low <= self.close <= self.high):
+            raise ValueError("Close price must be between low and high")
+        return self
