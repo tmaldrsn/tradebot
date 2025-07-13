@@ -17,7 +17,7 @@ class Candle:
         dto = dto.validate_olhc_relationships()
         return cls(
             timestamp=dto.timestamp,
-            open_=dto.open,
+            open=dto.open,
             high=dto.high,
             low=dto.low,
             close=dto.close,
