@@ -1,5 +1,6 @@
 import asyncio
 import json
+from typing import Any
 
 from dotenv import load_dotenv
 from src.patterns.patterns import detect_swing_points
@@ -8,14 +9,10 @@ from src.infra.redis import get_redis_connection
 
 load_dotenv('../.env')
 
-# instantiate redis connection
-rdb = get_redis_connection()
-redis_candle_repository = RedisCandleRepository(rdb)
-
 
 CHANNEL = "marketdata:fetched"
 
-async def handle_message(message):
+async def handle_message(message: Any, redis_candle_repository: RedisCandleRepository):
     try:
         data = json.loads(message["data"])
         ticker = data["ticker"]
@@ -33,7 +30,9 @@ async def handle_message(message):
 
 
 async def main():
+    # instantiate redis connection
     rdb = get_redis_connection()
+    redis_candle_repository = RedisCandleRepository(rdb)
 
     pubsub = rdb.pubsub()
     await pubsub.subscribe(CHANNEL)
@@ -41,7 +40,7 @@ async def main():
 
     async for message in pubsub.listen():
         if message["type"] == "message":
-            await handle_message(message)
+            await handle_message(message, redis_candle_repository)
 
 if __name__ == "__main__":
     asyncio.run(main())
